@@ -11,7 +11,7 @@ using std::queue;
 
 void drawGrid(sf::RenderWindow &window, array<Node, constants::nodesNum> &nodes);
 unsigned getNodeIndexAtPos(array<Node, constants::nodesNum> &nodes, sf::Vector2f &pos);
-unsigned getClickedButtonIndex(array<sf::RectangleShape, 5> &buttons,
+unsigned getClickedButtonIndex(array<sf::RectangleShape, 6> &buttons,
                                sf::Vector2f &mousePos);
 bool isBlockingNode(Node &node);
 void addNeighboursToQueue(queue<unsigned> &nodesQueue, array<Node, constants::nodesNum> &nodes, unsigned nodeIndex);
@@ -27,7 +27,7 @@ int main() {
    );
    window.setPosition({100, 100});
 
-   array<sf::RectangleShape, 5> buttons;
+   array<sf::RectangleShape, 6> buttons;
    std::fill( buttons.begin(),buttons.end(), sf::RectangleShape( sf::Vector2f(constants::buttonSize, constants::buttonSize)) );
 
    // Initialize button (position...)
@@ -35,12 +35,15 @@ int main() {
      buttons[i].setPosition({constants::wWidth - 70, 20 + constants::buttonSize*((float) i) +((float) i)*10});
      buttons[i].setOutlineColor(Node::WHITE);
    }
-   enum : unsigned {fromButton = 0u, destinationButton, barrierButton, eraseButton, startSearchButton};
+   enum : unsigned {fromButton = 0u, destinationButton, barrierButton, eraseButton, startSearchButton, resetGridButton};
    buttons[fromButton].setFillColor(Node::GREEN);
    buttons[destinationButton].setFillColor(Node::BLUE);
    buttons[barrierButton].setFillColor(Node::BLACK);
    buttons[eraseButton].setFillColor(Node::WHITE);
    buttons[startSearchButton].setFillColor(sf::Color(0, 255, 255));
+   buttons[resetGridButton].setFillColor(sf::Color(255, 0, 0));
+
+   buttons[resetGridButton].setPosition({constants::wWidth - 70, constants::wHeight - 70});
 
    array<Node, constants::nodesNum> nodes;
 
@@ -65,7 +68,7 @@ int main() {
    bool                 mouseClicked{ false };
    bool                 searching{ false };
    sf::Vector2f         mousePos;
-   queue<unsigned>     nodesQueue;
+   queue<unsigned>      nodesQueue;
 
    buttons[activeButton].setOutlineThickness(2.f);
    nodes[source].setColor(Node::GREEN);
@@ -91,6 +94,11 @@ int main() {
            buttons[activeButton].setOutlineThickness(2.f);
            if (activeButton == startSearchButton) {
              searching = true;
+           }
+           else if (activeButton == resetGridButton) {
+             searching = false;
+             nodesQueue = {};
+             resetGrid(nodes, source, destination);
            }
          }
        }
@@ -169,7 +177,7 @@ unsigned getNodeIndexAtPos(array<Node, constants::nodesNum> &nodes, sf::Vector2f
   return constants::invalidIndex;
 }
 
-unsigned getClickedButtonIndex(array<sf::RectangleShape, 5> &buttons, sf::Vector2f &mousePos) {
+unsigned getClickedButtonIndex(array<sf::RectangleShape, 6> &buttons, sf::Vector2f &mousePos) {
   for (unsigned i=0; i < buttons.size(); ++i) {
     if (buttons[i].getGlobalBounds().contains(mousePos)) {
       return i;
