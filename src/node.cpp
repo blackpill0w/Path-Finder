@@ -8,20 +8,18 @@ const sf::Color Node::WHITE = sf::Color(255, 255, 255);
 const sf::Color Node::BLUE = sf::Color(0, 0, 255);
 const sf::Color Node::GREEN = sf::Color(0, 255, 0);
 
-// Copy constructor
-Node::Node(const Node &other)
-  : explored(other.explored), rect( sf::Vector2f(constants::squareSize, constants::squareSize) ),
-    parent(other.parent), neighbours(other.neighbours)
+// Constructors
+Node::Node()
+  : explored(false), rect( sf::Vector2f(constants::squareSize, constants::squareSize) ),
+    parent(constants::invalidIndex), neighbours()
 {
-   rect.setPosition(other.rect.getPosition());
-   rect.setOutlineThickness(1.f);
-   rect.setOutlineColor(BLACK);
-   rect.setFillColor(other.rect.getFillColor());
+  rect.setOutlineThickness(1.f);
+  rect.setOutlineColor(BLACK);
 }
 
 Node::Node(const sf::Vector2f &pos, const unsigned index)
   : explored(false), rect( sf::Vector2f(constants::squareSize, constants::squareSize) ),
-    parent(nullptr), neighbours()
+    parent(constants::invalidIndex), neighbours()
 {
    rect.setPosition(pos);
    rect.setOutlineThickness(1.f);
@@ -30,15 +28,19 @@ Node::Node(const sf::Vector2f &pos, const unsigned index)
    setNeighbours(index);
 }
 
+void Node::setPosition(const sf::Vector2f &pos) {
+  rect.setPosition(pos);
+}
+
 sf::Color Node::getColor() const { return rect.getFillColor(); }
 
 void Node::setColor(const sf::Color &color) { rect.setFillColor(color); }
 
-void Node::setParent(Node *parent) { this->parent = parent; }
+void Node::setParent(unsigned parent) { this->parent = parent; }
 
-Node* Node::getParent() const { return parent; }
+unsigned Node::getParent() const { return parent; }
 
-bool Node::hasParent() const { return (parent != nullptr); }
+bool Node::hasParent() const { return (parent != constants::invalidIndex); }
 
 bool Node::isNodeAt(const sf::Vector2f &pos) const { return ( rect.getGlobalBounds().contains(pos) ); }
 
@@ -47,6 +49,8 @@ void Node::draw(sf::RenderWindow &window) const { window.draw(rect); }
 bool Node::isExplored() const { return explored; };
 
 void Node::markAsExplored() { explored = true; }
+
+void Node::markAsUnxplored() { explored = false; }
 
 void Node::setNeighbours(const unsigned index) {
   sf::Vector2f pos = rect.getPosition();
@@ -74,5 +78,4 @@ void Node::setNeighbours(const unsigned index) {
   if (pos.y > 1) {
     neighbours.emplace_back(index - constants::nodesInLine); // Up
   }
-
 }

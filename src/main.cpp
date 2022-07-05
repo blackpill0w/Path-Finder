@@ -1,5 +1,4 @@
 #include <SFML/Graphics/Color.hpp>
-#include <vector>
 #include <array>
 #include <queue>
 #include <algorithm>
@@ -11,17 +10,17 @@
 #include "node.hpp"
 
 using std::array;
-using std::vector;
 using std::queue;
 
-void drawGrid(sf::RenderWindow &window, vector<Node> &nodes);
-unsigned getNodeIndexAtPos(vector<Node> &nodes, sf::Vector2f &pos);
+void drawGrid(sf::RenderWindow &window, array<Node, constants::nodesNum> &nodes);
+unsigned getNodeIndexAtPos(array<Node, constants::nodesNum> &nodes, sf::Vector2f &pos);
 unsigned getClickedButtonIndex(array<sf::RectangleShape, 5> &buttons,
                                sf::Vector2f &mousePos);
 bool isBlockingNode(Node &node);
-void addNeighboursToQueue(queue<unsigned> &nodesQueue, vector<Node> &nodes, unsigned nodeIndex);
-void exploreNode(queue<unsigned> &nodesQueue, vector<Node> &nodes, unsigned nodeIndex);
-void highlightPath(Node* nodeToHighlight, Node *source, Node *destination);
+void addNeighboursToQueue(queue<unsigned> &nodesQueue, array<Node, constants::nodesNum> &nodes, unsigned nodeIndex);
+void exploreNode(queue<unsigned> &nodesQueue, array<Node, constants::nodesNum> &nodes, unsigned nodeIndex);
+void highlightPath(array<Node, constants::nodesNum> &nodes, unsigned nodeToHighlight, unsigned source, unsigned destination);
+void resetGrid(array<Node, constants::nodesNum> &nodes, unsigned source, unsigned destination);
 
 
 int main() {
@@ -46,8 +45,7 @@ int main() {
    buttons[eraseButton].setFillColor(Node::WHITE);
    buttons[startSearchButton].setFillColor(sf::Color(0, 255, 255));
 
-   vector<Node> nodes;
-   nodes.reserve(constants::nodesNum);
+   array<Node, constants::nodesNum> nodes;
 
    int x{ 0 };
    int y{ 0 };
@@ -55,7 +53,8 @@ int main() {
    while (y < constants::gridHeight) {
      x = 0;
      while (x < constants::gridWidth) {
-       nodes.emplace_back( Node(sf::Vector2f(x, y), nodeIndex) );
+       nodes[nodeIndex].setPosition(sf::Vector2f(x, y));
+       nodes[nodeIndex].setNeighbours(nodeIndex);
        ++nodeIndex;
        x += constants::squareSize;
      }
@@ -134,7 +133,8 @@ int main() {
 
          if (currentNode == destination) {
            destinationAfterSearch = currentNode;
-           break;
+           nodesQueue = {};
+           searching = false;
          }
          if (currentNode != source && currentNode != destination) {
            nodes[currentNode].setColor(sf::Color(0, 255, 255));
@@ -144,12 +144,8 @@ int main() {
        else {
          searching = false;
        }
-
-       if (destinationAfterSearch == destination) {
-         searching = false;
-       }
        if (destinationAfterSearch != constants::invalidIndex) {
-         highlightPath(&nodes[destinationAfterSearch], &nodes[source], &nodes[destination]);
+         highlightPath(nodes, destinationAfterSearch, source, destination);
        }
      }
 
@@ -161,13 +157,13 @@ int main() {
    }
 }
 
-void drawGrid(sf::RenderWindow &window, vector<Node> &nodes) {
+void drawGrid(sf::RenderWindow &window, array<Node, constants::nodesNum> &nodes) {
   for (auto& node: nodes) {
     node.draw(window);
   }
 }
 
-unsigned getNodeIndexAtPos(vector<Node> &nodes, sf::Vector2f &pos) {
+unsigned getNodeIndexAtPos(array<Node, constants::nodesNum> &nodes, sf::Vector2f &pos) {
   for (unsigned i=0; i < nodes.size(); ++i) {
     if (nodes[i].isNodeAt(pos)) {
       return i;
@@ -187,21 +183,30 @@ unsigned getClickedButtonIndex(array<sf::RectangleShape, 5> &buttons, sf::Vector
 
 bool isBlockingNode(Node &node) { return (node.getColor() == Node::BLACK); }
 
-void addNeighboursToQueue(queue<unsigned> &nodesQueue, vector<Node> &nodes, unsigned nodeIndex) {
+void addNeighboursToQueue(queue<unsigned> &nodesQueue, array<Node, constants::nodesNum> &nodes, unsigned nodeIndex) {
   for (auto& i: nodes[nodeIndex].neighbours) {
     if (!nodes[i].isExplored() && !isBlockingNode(nodes[i])) {
       nodes[i].markAsExplored();
       nodesQueue.emplace(i);
-      nodes[i].setParent(&nodes[nodeIndex]);
+      nodes[i].setParent(nodeIndex);
     }
   }
 }
 
-void highlightPath(Node* nodeToHighlight, Node *source, Node *destination) {
+void highlightPath(array<Node, constants::nodesNum> &nodes, unsigned nodeToHighlight, unsigned source, unsigned destination) {
   if (nodeToHighlight != source && nodeToHighlight != destination) {
-    nodeToHighlight->setColor(sf::Color(255, 0, 0));
+    nodes[nodeToHighlight].setColor(sf::Color(255, 0, 0));
   }
-  if (nodeToHighlight->hasParent()) {
-    highlightPath(nodeToHighlight->getParent(), source, destination);
+  if (nodes[nodeToHighlight].hasParent()) {
+    highlightPath(nodes, nodes[nodeToHighlight].getParent(), source, destination);
+  }
+}
+
+void resetGrid(array<Node, constants::nodesNum> &nodes, unsigned source, unsigned destination) {
+  for (unsigned i=0; i < nodes.size(); ++i) {
+    nodes[i].markAsUnxplored();
+    if (i != source && i != destination) {
+      nodes[i].setColor(Node::WHITE);
+    }
   }
 }
