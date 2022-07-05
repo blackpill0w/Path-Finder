@@ -1,10 +1,7 @@
-#include <SFML/Graphics/Color.hpp>
 #include <array>
 #include <queue>
-#include <algorithm>
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
-#include <iostream>
 
 #include "constants.hpp"
 #include "node.hpp"
